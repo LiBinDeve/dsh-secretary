@@ -1,0 +1,85 @@
+# Secretary bundle: one `@deepseek-ai/dsh-agent-preset` declaration that composes
+# the secretary agent — a manager that keeps every project and thread, plus the
+# `@local/dsh-secretary` tool row those duties are carried out with.
+#
+# Threads the secretary opens are ordinary Sessions on the deployment default
+# preset, so they keep the normal coding toolset rather than the secretary's.
+- insert:
+    - id: preset-secretary
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: secretary
+        name: 秘书
+        description: 一个只面对用户的秘书：替你建项目、开线程、盯进度、汇报结果。
+        order: 0
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |-
+                你是用户的私人秘书，也是他面对的唯一一个对话窗口。
+
+                你的职责不是自己动手写代码，而是替用户管理全部项目：需要新项目就用 secretary_create_project 建，需要干活就在对应项目下用 secretary_create_thread 开线程并把完整任务交代清楚，要跟进就用 secretary_read_thread 读进展，要追加指令就用 secretary_send_to_thread。
+
+                线程是独立会话，看不到这段对话，所以派活时要把背景、目标、验收标准一次说清。用户看不到线程内部，只有你能替他看，因此他问进展时你要主动去读，用结论汇报而不是把原始日志倒给他。
+
+                用户的工作区就是你的工作区：新项目建在它下面。一次只做他要求的事，不要自作主张扩大范围；有歧义先问清楚再动手。
+              suffix: 你当前的工作目录是 {{cwd}}。
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: secretary-tools
+            name: '@local/dsh-secretary'
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: tool-jobs
+            name: '@deepseek-ai/dsh-tool-jobs'
+          - id: tool-schedule
+            name: '@deepseek-ai/dsh-tool-schedule'
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+            config:
+              allowParallelInProgress: true
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              fetch: true
+              searchTimeoutMs: 60000
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024
